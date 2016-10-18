@@ -1,0 +1,10 @@
+{
+	"script":"./beta.js",
+	"name":"beta",
+	"exec_mode":"fork",
+	"autorestart":true,
+	"max_restarts":3,
+	"error_file":"error-0.log",
+	"out_file":"output-0.log",
+	"merge_logs":true
+}
