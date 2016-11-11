@@ -1,0 +1,25 @@
+{
+  "name": "galacticbot",
+  "description": "This is the official github for GalacticBot",
+  "version": "0.1.0",
+  "main": "beta.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "node beta"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/GalacticArc/GalacticBot.git"
+  },
+  "keywords": [
+    "discord",
+    "bot"
+  ],
+  "author": "Semaphorism",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/GalacticArc/GalacticBot/issues"
+  },
+  "homepage": "https://github.com/GalacticArc/GalacticBot#readme"
+}
