@@ -85,6 +85,13 @@ exports.module.init = function(){
 
 	discord.hookcommand(discordbot, "ge", getError, {version: 2});
 	discord.hookcommand(discordbot, "verifysettings", verifySettings, {version: 2});
+	discord.hookcommand(discordbot, "react", (m, str)=>{
+		bot.addMessageReaction(m.channel.id, m.id, encodeURIComponent("👌"));
+	}, {version: 2});
+
+	discord.hookcommand(discordbot, "choice", reactionChoice, {version: 2});
+	discord.hookcommand(discordbot, "poll", reactionPoll, {version: 2});
+	discord.hookcommand(discordbot, "result", reactionResults, {version: 2});
 
 	bot.on("guildCreate", EventServerCreated);
 	bot.on("guildDelete", EventServerDeleted);
@@ -259,6 +266,21 @@ function loadServerData()
 						}
 					}
 				}
+
+				var servers = bot.guilds.map(g=>g);
+				for(var i in servers){
+					if(_s[servers[i].id] == undefined){
+						sql.createServerData(servers[i], ()=>{});
+						var server = servers[i];
+						_s[server.id] = {
+							name: server.name,
+							tags: [],
+							invite: false,
+							settings: {},
+							cache: time_now()
+						}
+					}
+				}
 			}
 		}
 	});
@@ -285,11 +307,14 @@ function verifySettings(m, str)
 				if(result.length === 0 || result == false){
 					output+="\n - Server data not found in database, creating...";
 					bot.reply(m, output);
-					sql.setServerInformation(m.channel.guild.id, {
-						server_id: m.channel.guild.id,
-						server_name: server.name,
-						owner_id: m.channel.guild.ownerID
-					});
+					_s[server.id] = {
+						name: server.name,
+						tags: [],
+						invite: false,
+						settings: {},
+						cache: time_now()
+					}
+					sql.createServerData(server, ()=>{});
 				} else {
 					output+="\n - Found server data in the database, stored into memory.";
 					bot.reply(m, output);
@@ -586,72 +611,12 @@ function setupData(m)
 		return;
 	}
 
-	if(_q.servers[m.channel.guild.id] != undefined){
+	if(_q.servers[m.channel.guild.id] == undefined){
 		bot.reply(m, "The server data is already setup.");
 		return;
 	} else {
 
 	}
-}
-
-function startProcess(n, c, a)
-{
-	try {
-		logs[n] = [];
-		var spawn = require('child_process').spawn;
-		console.log("Dir: "+a);
-		subprocess[n] = spawn("node", [a], {
-				cwd: c
-		});
-
-		subprocess[n].stdout.setEncoding('utf8');
-		subprocess[n].stdout.on('data', function (data) {
-			console.log(data.replace("\n",""));
-			if(logs[n].length > 20){
-				
-				logs[n].shift();
-				logs[n].push(data);
-			} else {
-				logs[n].push(data);
-			}
-		});
-
-		subprocess[n].on('close', function (code, str) {
-			console.log(n+" closed. Rebooting "+code + " - "+str);
-			this.kill('SIGHUP');
-			//subprocess[n] = null;
-			setTimeout(function(){
-				startProcess(n, c, a);
-			}, 5000);
-		});
-
-		subprocess[n].on('error', function(err){
-			console.log(err.stack);
-		});
-	} catch(err){
-		console.log(err.stack);
-	}
-}
-
-function restartMusic(m)
-{
-	if(developers.indexOf(m.author.id) == -1){
-		bot.reply(m, libtext.admin_only);
-		return;
-	}	
-	if(subprocess["voicebot"] !== null){
-		try {
-			//subprocess["voicebot"].disconnect();
-			subprocess["voicebot"].kill('SIGHUP');
-		} catch(err){
-			console.log(err.stack);
-			bot.reply(m, "Failed to restart music bot.");
-			return;
-		}
-	}
-
-	bot.reply(m, "Restarted music successfully.");
-	startProcess("voicebot", "/var/nodejs/multidiscord/galacticvoice/", "loader.js");
 }
 
 function viewlogs(m)
@@ -690,7 +655,7 @@ function createStatisticsMessage()
 
 function say(m, str)
 {
-	bot.createMessage(m.channel.id, str);
+	bot.createMessage(m.channel.id, {content: str, disableEveryone: true});
 }
 
 global.setupStatisticCallback = function(cb)
@@ -1262,4 +1227,65 @@ function displayServers(m)
 		}
 	}
 	bot.reply(m, str);
+}
+
+function reactionChoice(m, str)
+{
+	var num = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+	var question = str.split(":")[0];
+	var str2 = str.split(":")[1];
+	var opt = str2.split(";");
+	if(opt.length < 2 || opt.length > 9){
+		bot.reply(m, "You must provide at least 2 options, and no more than 9");
+	}
+	var out = "**"+question+"**";
+	for(var i in opt){
+		out+="\n :"+num[i]+": "+opt[i];
+	}
+	bot.reply(m, out);
+}
+
+function reactionPoll(m, str)
+{
+	bot.createMessage(m.channel.id, "**"+str+"**").then((m2)=>{
+		bot.addMessageReaction(m2.channel.id, m2.id, encodeURIComponent("☑"));
+		setTimeout(()=>{1
+			bot.addMessageReaction(m2.channel.id, m2.id, encodeURIComponent("❌"));
+		}, 500);
+		setTimeout(()=>{
+			bot.editMessage(m2.channel.id, m2.id, "**"+str+"** (Poll ID: "+m2.id+")");
+		}, 10000);
+	});
+}
+
+function reactionResults(m, str)
+{
+	var result = {
+		yes: -1,
+		no: -1
+	};
+	var temp = {};
+	bot.getMessage(m.channel.id, str).then((m2)=>{
+	  bot.getMessageReaction(m.channel.id, m.id, encodeURIComponent("☑"), 500).then((users)=>{
+	  	for(var i in users){
+	  		temp[users[i].id] = 1;
+	  		result.yes++;
+	  	}
+
+	  	bot.getMessageReaction(m.channel.id, m.id, encodeURIComponent("❌"), 500).then((users2)=>{
+	  		for(var i in users2){
+	  			if(temp[users2[i].id] !== undefined){
+	  				delete temp[users2[i].id];
+	  				result.yes--;
+	  			} else {
+	  				result.no++;
+	  				temp[users2[i].id] = -1;
+	  			}
+	  		}
+
+	  		bot.reply(m, "**Results: **\n ☑ "+result.yes+"\n ❌ "+result.no);
+	  	});
+	  });
+	});
+	
 }

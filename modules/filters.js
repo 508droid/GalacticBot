@@ -10,12 +10,6 @@ var filters = {};
 var removalQueue = {};
 
 exports.module.preinit = ()=>{
-	Enum.FilterType = {
-		default: 1,
-		blacklist: 2,
-		whitelist: 3
-	}
-
 	Enum.NSFW = {
 		allow: 1,
 		deny: 0
@@ -91,27 +85,26 @@ global.RegisterFilter = function(fdata)
 
 exports.HandleAction = function(message, action, arg)
 {
-	console.log("Action fired for "+message.content);
 	var settings = _s[message.channel.guild.id].settings;
 	var member = message.member;
 	var user = message.author;
-	if(action == 2) // Mute
+	if(action == Enum.Actions.mute) // Mute
 	{
 		// Add the muted role to the user.
-		bot.editGuildMember(m.channel.guild.id, user.id, {
-			roles: member.roles.concat([settings.role])
-		});
+		var bmember = message.channel.guild.members.get(bot.user.id);
+		libserver.MuteMember(message.channel.guild, message.member, bot.bmember, "Muted by bot filters.")
 		return true;
 	}
-	else if(action == 3) // Kick
+	else if(action == Enum.Actions.kick) // Kick
+	{
+
+		return false;
+	}
+	else if(action == Enum.Actions.ban) // Ban
 	{
 		return false;
 	}
-	else if(action == 4) // Ban
-	{
-		return false;
-	}
-	else if(action == 5) // Ban
+	else if(action == Enum.Actions.delete) // Ban
 	{
 		bot.deleteMessage(message.channel.id, message.id);
 	}

@@ -65,6 +65,8 @@ exports.module.init = function(){
 	discord.hookcommand(discordbot, "prune", prune, {version: 2, module: "admin"});
 	discord.hookcommand(discordbot, "cani", doIHavePermission, {version: 2, module: "spam"});
 	discord.hookcommand(discordbot, "filter", filterSettings, {version: 2, module: "admin"});
+
+	discord.hookcommand(discordbot, "activity", UserActivity, {version: 2, module: "admin"});
 	// Ignoring commands, etc.
 
 	bot = discord.bots["bot"];
@@ -75,8 +77,6 @@ exports.module.init = function(){
 		console.log("Bot is ready.");
 	});
 
-	
-	bot.on("messageCreate", OnMessageReceived);
 	_s = global.s;
 	
 	setInterval(()=>{
@@ -120,6 +120,10 @@ function evaluate(m, str)
 
 function filterSettings(m, str)
 {
+	if(developers.indexOf(m.author.id) == -1){
+		bot.reply(m, "This command has not yet been enabled.");
+		return;
+	}	
 	if(isAdmin(m.author, m.channel.guild) == false){
 		bot.reply(m, "You are not an administrator."); return;
 	}
@@ -130,9 +134,13 @@ function filterSettings(m, str)
 	}
 	var args = str.split(" ");
 	if(str == ""){
-		return bot.reply(m, "Usage:\n-filter <filter name> <setting> <value>");
+		return bot.reply(m, "Usage:\n   -filter <filter name> <setting> <value>\n   -filter list");
 	}
 	var filter = args[0];
+	if(filter == "list"){
+		bot.reply(m, "\nHere is a list of filters names:\n"+Object.keys(MessageFilters).join(", "));
+		return;
+	}
 	var index = args[1];
 	var val = args[2];
 	// Does the filter exist?
@@ -156,8 +164,19 @@ function filterSettings(m, str)
 		// Reset the settings
 		settings.filters[filter] = MessageFilters[filter].CreateSettings();
 		bot.reply(m, "Settings were reset to default.");
+	} else if(index == "describe"){
+		if(MessageFilters[filter].settings[val] == undefined){
+			bot.reply(m, "Setting does not exist.");
+			return;
+		}
+		bot.reply(m, MessageFilters[filter].settings[val]);
+	} else {
+		args.splice(0,2);
+		MessageFilters[filter].SetOption(settings.filters[filter], index, args, m);
 	}
-	
+	UpdateServerInfoAsync(m.channel.guild.id, (success)=>{
+
+	});
 }
 
 function domainAllow(m, str)
@@ -228,12 +247,12 @@ function EventMemberBanned(guild, user)
 				var id = result[0];
 				var modcase = mlogs[0];
 				var logformat = libtext.logs.ban;
-				var modstr = logformat.replace(/\{staff\}/g, getFU(m.author.id))
+				var modstr = logformat.replace(/\{staff\}/g, getFU(user.id))
 					.replace(/\{user\}/g, getFU(modcase.user))
-					.replace(/\{reason\}/g, breason)
+					.replace(/\{reason\}/g, mreason)
 					.replace(/\{caseid\}/g, id);
 
-				serverlog(m.channel.guild, modstr, id);
+				serverlog(guild, modstr, id);
 				
 			} else {
 				console.log("Error with moderation logs.");
@@ -427,190 +446,17 @@ function serverSettings(m, str)
 		bot.reply(m, "You are missing the `administrator` permission. "); return;
 	}	
 	var sid = m.channel.guild.id;
-
+	var guild = m.channel.guild;
 	var perm = str.split(" ")[0];
 	var arg = str.split(" ")[1];
 	if(perm == "list"){
 		bot.reply(m, ",\nHere is a list of server settings:\n"
-			+"\n**emojis** <amount | off | false> - Limit the amount of emojis a user can send in a message. Default: off"
-			+"\n**delete_emojis** on, true, off, false - Wether the bot should delete emoji spam. Default: false"
-			+"\n**action_emojis** <[action] | off | false> - Should the bot kick who spammed emojis? How many offenses?. Default: off"
-			+"\n**emoji_warnings** <[Number]> - The amount of warnings before the action is taken from `action_emojis`"
-			+"\n**mentions** <amount> - Limit the amount of mentions a user can send in a message. Default: off. We dont recommend anything below like 5"
-			+"\n**newuser_mentions** <amount> - Limit how much mentions a user can send within a set time period when they are new. Default: off"
-			+"\n**newuser_time** <time> - The amount of time the bot recognizes a user as new."
-			+"\n**action_mentions** <action> - What action to take after a user has spammed mentions to many times."
-			+"\n**mention_warnings** <amount> - How many mention spam must a user send to get action taken against them."
-			+"\n**allow_mm** <true | false> - Wether to allow people with Manage messages permission to be allowed to use commands anywhere."
 			+"\n**join** <formatted message> - The message to display when a user joins."
 			+"\n**leave** <formatted message> - The message to display when a user leaves."
+			+"\n**allow_mm** <true | false> - Wether to allow people with Manage messages permission to be allowed to use commands anywhere."
 			+"\n**ignore** <#channel [,]> - Ignore channels easily."
+			+"\n**loglevel** 0-2 - Set the bots logging level."
 		);
-	} else if(perm == "emojis"){
-		if(arg == "off" || arg == "false"){
-			delete _s[sid].settings["emojis"];
-			UpdateServerInfoAsync(sid, (success)=>{
-				if(success){
-					bot.reply(m, "Turned off emoji spam limit.");
-				} else {
-					bot.reply(m, "Turned off emoji spam limit, "+db_warn);
-				}
-			});
-			
-		} else {
-			var am = parseInt(arg);
-			if(isNaN(am) || am < 0){
-				bot.reply(m, "Please provide a proper number, and it can't be less than zero.");
-			} else {
-				_s[sid].settings["emojis"] = am;
-				UpdateServerInfoAsync(sid, (success)=>{
-					if(success){
-						bot.reply(m, "Updated emoji spam limit.");
-					} else {
-						bot.reply(m, "Updated emoji spam limit, "+db_warn);
-					}
-				});
-				
-			}
-		}
-	} else if(perm == "mentions"){
-		if(arg == "off" || arg == "false"){
-			delete _s[sid].settings["mention_limit"];
-			UpdateServerInfoAsync(sid, (success)=>{
-				if(success){
-					bot.reply(m, "Turned off mention limit");
-				} else {
-					bot.reply(m, "Turned off mention limit, "+db_warn);
-				}
-			});
-			
-		} else {
-			var am = parseInt(arg);
-			if(isNaN(am) || am < 1){
-				bot.reply(m, "Please provide a proper number, and it can't be less than 1.");
-			} else {
-				_s[sid].settings["mention_limit"] = am;
-				UpdateServerInfoAsync(sid, (success)=>{
-					if(success){
-						bot.reply(m, "Updated mention limit.");
-					} else {
-						bot.reply(m, "Updated mention limit, "+db_warn);
-					}
-				});
-				
-			}
-		}
-	} else if(perm == "delete_emojis"){
-		if(arg == "off" || arg == "false"){
-			delete _s[sid].settings["delete_emojis"];
-			UpdateServerInfoAsync(sid, (success)=>{
-				if(success){
-					bot.reply(m, "Turned off emoji deletion");
-				} else {
-					bot.reply(m, "Turned off emoji deletion, "+db_warn);
-				}
-			});
-		} else if(arg == "on" || arg == "true"){
-			_s[sid].settings["delete_emojis"] = true;
-			UpdateServerInfoAsync(sid, (success)=>{
-				if(success){
-					bot.reply(m, "Turned on emoji deletion");
-				} else {
-					bot.reply(m, "Turned on emoji deletion, "+db_warn);
-				}
-			});
-		}
-	} else if(perm == "allow_mm"){
-		if(arg == "off" || arg == "false"){
-			_s[sid].settings["allow_mm"] = false;
-			UpdateServerInfoAsync(sid, (success)=>{
-				if(success){
-					bot.reply(m, "Turned off allowing manage messages bypass.");
-				} else {
-					bot.reply(m, "Turned off allowing manage messages bypass., "+db_warn);
-				}
-			});
-		} else if(arg == "on" || arg == "true"){
-			_s[sid].settings["allow_mm"] = true;
-			UpdateServerInfoAsync(sid, (success)=>{
-				if(success){
-					bot.reply(m, "Turned on allowing manage messages bypass.");
-				} else {
-					bot.reply(m, "Turned on allowing manage messages bypass., "+db_warn);
-				}
-			});
-		}
-	} else if(perm == "action_emojis"){
-		if(arg == "off" || arg == "false"){
-			delete _s[sid].settings["action_emojis"];
-			UpdateServerInfoAsync(sid, (success)=>{
-				if(success){
-					bot.reply(m, "Turned off emoji kick system.");
-				} else {
-					bot.reply(m, "Turned off emoji kick system, "+db_warn);
-				}
-			});
-		} else {
-			var actions = ["mute","kick","ban"];
-			if(actions.indexOf(arg) > -1){
-				_s[sid].settings["action_emojis"] = actions.indexOf(arg);
-				UpdateServerInfoAsync(sid, (success)=>{
-					if(success){
-						bot.reply(m, "Set emoji spam action.");
-					} else {
-						bot.reply(m, "Set emoji spam action, "+db_warn);
-					}
-				});
-			} else {
-				bot.reply(m, "Please use `mute`, `kick` or `ban` for this setting.");
-			}
-		}
-	} else if(perm == "emoji_warnings"){
-		if(arg == "off" || arg == "false"){
-			delete _s[sid].settings["emoji_warn"];
-			UpdateServerInfoAsync(sid, (success)=>{
-				if(success){
-					bot.reply(m, "Turned off mention limit");
-				} else {
-					bot.reply(m, "Turned off mention limit, "+db_warn);
-				}
-			});
-			
-		} else {
-			var am = parseInt(arg);
-			if(isNaN(am) || am < 1){
-				bot.reply(m, "Please provide a proper number, and it can't be less than 1.");
-			} else {
-				_s[sid].settings["emoji_warn"] = am;
-				UpdateServerInfoAsync(sid, (success)=>{
-					if(success){
-						bot.reply(m, "Updated emote warning count.");
-					} else {
-						bot.reply(m, "Updated emote warning count, "+db_warn);
-					}
-				});
-				
-			}
-		}
-	} else if(perm == "muted_role"){
-		if(arg == "false" || arg == "off"){
-			_s[sid].settings.muted = false;
-			bot.reply(m, "Removed the muted role setting, people can no longer be muted without a role set."); 
-			return;
-		}
-		var role = m.channel.guild.roles.find(g=>g.name.toLowerCase() == arg.toLowerCase() || g.name.toLowerCase().includes(arg.toLowerCase()));
-		if(role == null){
-			bot.reply(m, "Can't find role.");
-		} else {
-			_s[sid].settings.muted = role.id;
-			UpdateServerInfoAsync(sid, (success)=>{
-				if(success){
-					bot.reply(m, "Updated muted role successfully.");
-				} else {
-					bot.reply(m, "Updated muted role, "+db_warn);
-				}
-			});
-		}
 	} else if(perm == "join"){
 		var msg = str.substring(5);
 		if(msg == "" || arg == "" || arg == undefined){
@@ -657,50 +503,145 @@ function serverSettings(m, str)
 				bot.reply(m, "Updated the leave message, "+db_warn);
 			}
 		});
-	} else if(perm == "invite_filter"){
-		var value = str.split(" ")[1];
-		if(value == "" || value == undefined){
-			bot.reply(m, "Usage: -settings invite_filter <on | off | true | false>"); return;
-		}
-		if(value == "true" || value == "on"){
-			_s[sid].settings.filterinvites = true;
-		} else {
-			_s[sid].settings.filterinvites = false;
-		}
-		UpdateServerInfoAsync(sid, (success)=>{
-			if(success){
-				bot.reply(m, "Updated the invite filter successfully.");
-			} else {
-				bot.reply(m, "Updated the invite filter, "+db_warn);
+	} else if(perm == "ignore"){
+		var d = str.split(" ");
+		if(arg == "list"){
+			var list = [];
+			if(_s[sid].settings.c == undefined || _s[sid].settings.c.length == 0){
+				bot.reply(m, "No channels are being ignored."); return;
 			}
-		});
-	} else {
-		var mutedrole = m.channel.guild.roles.get(_s[sid].settings.muted);
-		var mrole = "[Not found]";
-		if( mutedrole !== undefined){
-			mrole = mutedrole.name;
-		}
-		var emojis = _s[sid].settings.emojis || "off";
-		var delmojis = _s[sid].settings.delete_emojis || "off";
-		var actione = _s[sid].settings.action_emojis;
-		if(actione == undefined){
-			actione = "off";
-		}
-		var emotewarn = _s[sid].settings.emoji_warn || "off";
-		var mentionl = _s[sid].settings.mention_limit || "off";
-		var allowmm = _s[sid].settings.allow_mm || "off";
-		var invitefilter = _s[sid].settings.invitefilter || "off";
-		var output = ", **Server Settings**:"
-			+"\n emojis: "+ emojis
-			+"\n delete_emojis: "+ delmojis 
-			+"\n action_emojis: "+ actione
-			+"\n emoji_warnings: "+ emotewarn
-			+"\n mentions: "+ mentionl
-			+"\n muted_role: "+ mrole
-			+"\n allow_mm: "+ allowmm;
-			+"\n invite_filter: "+ invitefilter;
+			var cl = _s[sid].settings.c;
+			for(var i in cl){
+				var cc = guild.channels.get(cl[i]);
+				if(cc != undefined){
+					list.push("<#"+cc.id+">");
+				}
+			}
 
-		bot.reply(m, output);
+			bot.reply(m, "Here is a list of channels being ignored:\n"+list.join(", "));
+			return;
+		} else if(arg == "set"){
+			d.splice(0,2);
+			var channels = d;
+			var list = [];
+			var newignore = [];
+			for(var i in channels){
+				var cc = libbot.ResolveChannel(channels[i]);
+				if(cc != false){
+					list.push("<#"+cc.id+">");
+					newignore.push(cc.id);
+				}
+			}
+
+			_s[sid].settings.c = newignore;
+			UpdateServerInfoAsync(sid, (success)=>{
+				if(success){
+					bot.reply(m, "Set channels to ignore to the following:\n"+list.join(", "));
+				} else {
+					bot.reply(m, "Set channels to ignore to the following:\n"+list.join(", ")+", "+db_warn);
+				}
+			});
+		} else if(arg == "add"){
+			d.splice(0,2);
+			var channels = d;
+			var list = [];
+			for(var i in channels){
+				var cc = libbot.ResolveChannel(channels[i]);
+				if(cc != false){
+					if(_s[sid].settings.c.indexOf(cc.id) == -1){
+						list.push("<#"+cc.id+">");
+						_s[sid].settings.c.push(cc.id);
+					}
+				}
+			}
+
+			UpdateServerInfoAsync(sid, (success)=>{
+				if(success){
+					bot.reply(m, "Added channels to ignore:\n"+list.join(", "));
+				} else {
+					bot.reply(m, "Added channels to ignore:\n"+list.join(", ")+", "+db_warn);
+				}
+			});
+		} else if(arg == "remove"){
+			d.splice(0,2);
+			var channels = d;
+			var list = [];
+			for(var i in channels){
+				var cc = libbot.ResolveChannel(channels[i]);
+				if(cc != false){
+					var pos = _s[sid].settings.c.indexOf(cc.id);
+					if(pos > -1){
+						_s[sid].settings.c.splice(pos, 1);
+						list.push("<#"+cc.id+">");
+					}
+				}
+			}
+
+			UpdateServerInfoAsync(sid, (success)=>{
+				if(success){
+					bot.reply(m, "Removed channels to ignore:\n"+list.join(", "));
+				} else {
+					bot.reply(m, "Removed channels to ignore:\n"+list.join(", ")+", "+db_warn);
+				}
+			});
+		} else {
+			bot.reply(m, 
+				"\n**Usage:**\n"
+				+"\n   `-settings ignore list`\n      Will list current ignored channels."
+				+"\n   `-settings ignore set #channel[, ]`\n      Sets the channels to ignore, This will reset your previous ones to these channels specifically."
+				+"\n   `-settings ignore add #channel[, ]`\n      Adds new channels to ignore."
+				+"\n   `-settings ignore remove #channel[, ]`\n      Removes channels to ignore."
+			)
+		}
+	} else if(perm == "allow_mm"){
+		if(arg == "off" || arg == "false"){
+			_s[sid].settings["allow_mm"] = false;
+			UpdateServerInfoAsync(sid, (success)=>{
+				if(success){
+					bot.reply(m, "Turned off allowing manage messages bypass.");
+				} else {
+					bot.reply(m, "Turned off allowing manage messages bypass., "+db_warn);
+				}
+			});
+		} else if(arg == "on" || arg == "true"){
+			_s[sid].settings["allow_mm"] = true;
+			UpdateServerInfoAsync(sid, (success)=>{
+				if(success){
+					bot.reply(m, "Turned on allowing manage messages bypass.");
+				} else {
+					bot.reply(m, "Turned on allowing manage messages bypass., "+db_warn);
+				}
+			});
+		}
+	} else if(perm == "muted_role"){
+		var role = libbot.ResolveRole(arg, m.channel.guild);
+		if(role == false){
+			bot.reply(m, "Could not find the role!");
+		} else {
+			_s[sid].settings.muted = role.id;
+			UpdateServerInfoAsync(sid, (success)=>{
+				if(success){
+					bot.reply(m, "Successfully set the muted role.");
+				} else {
+					bot.reply(m, "Successfully set the muted role, "+db_warn);
+				}
+			});
+		}
+	} else if(perm == "loglevel"){
+		if(isNaN(parseInt(arg)) || parseInt(arg) < 0 || parseInt(arg) > 2){
+			bot.reply(m, "Please use a proper integer between 0 and 2."); return;
+		} else {
+			_s[sid].settings.loglevel = parseInt(arg);
+			UpdateServerInfoAsync(sid, (success)=>{
+				if(success){
+					bot.reply(m, "Successfully set the log level to "+arg);
+				} else {
+					bot.reply(m, "Successfully set the log level to "+arg+", "+db_warn);
+				}
+			});
+		}
+	} else {
+		bot.reply(m, "Usage:\n-settings <setting> <value>\nIf you put a setting, it most likely does not exist.");
 	}
 }
 
@@ -714,81 +655,6 @@ function UpdateServerInfoAsync(serverid, callback)
 		callback(success);
 	});
 	sql.createSettingsRevision(serverid, sjson);
-}
-
-function OnMessageReceived(m)
-{
-	if(m.author.id == bot.user.id){ return; }
-	var server = m.channel.guild;
-	var str = m.cleanContent;
-	if(server === undefined){
-		return;
-	}
-	if(emojiwarnings[server.id] == undefined){
-		emojiwarnings[server.id] = {};
-	}
-	if(_s[server.id] === undefined || _s[server.id].settings === undefined){
-		return;
-	}
-	// filterinvites
-	var s = _s[server.id].settings;
-	var output = "";
-	var doDelete = false;
-	if(s.action_emojis !== undefined && !isNaN(s.emojis)){
-		var count = (str.match(/(\:[a-zA-Z0-9]*\:)/g) || []).length;
-		count += (str.match(/([\uD800-\uDBFF][\uDC00-\uDFFF])/g) || []).length;
-		if(count > s.emojis){
-			if(s.emoji_warn !== undefined){
-				if(emojiwarnings[server.id][m.author.id] === undefined){
-					emojiwarnings[server.id][m.author.id] = [time_now()];
-				} else {
-					emojiwarnings[server.id][m.author.id].push(time_now());
-				}
-				var now = time_now();
-				var uew = emojiwarnings[server.id][m.author.id];
-				var ewc = 0;
-				for(var i in uew){
-					if(uew[i] > now-600){
-						ewc++;
-					}
-				}
-				console.log(ewc,s.emoji_warn,s.action_emojis);
-				if(ewc >= s.emoji_warn){
-					if(s.action_emojis == 0){
-						botMuteUser(m, "Message exceeded emoji limit set on server.");
-					}
-				}
-
-				
-
-				// output += "\nYou need to calm down with the emojis.";
-			}
-			if(s.delete_emojis != undefined && s.delete_emojis == true){
-				doDelete = true;
-			}
-		}
-	}
-
-	if(s.filterinvites){
-		// Remove spaces from string
-		var nospace = str.replace(/\s/g, "");
-		var link = new RegExp(/^(discord.gg\/)([a-zA-Z0-9]{4-10})/g);
-		if(nospace.match(link) !== null){
-			doDelete = true;
-			output += "\nPlease do not advertise.";
-		}
-	}
-
-	if(s.mention_limit != undefined && !isNaN(parseInt(s.mention_limit)) && m.mentions.length >= s.mention_limit){
-		doDelete = true;
-		output += "\nPlease do not mention more than "+s.mention_limit;
-	}
-	if(doDelete){
-		bot.deleteMessage(m.channel.id, m.id);
-	}
-	if(output != ""){
-		bot.createMessage(m.channel.id, "<@"+m.author.id+"> "+output);
-	}
 }
 
 function botMuteUser(m, mreason)
@@ -857,7 +723,7 @@ function exportSettings(m, str)
 function userModeration(m, str)
 {
 	if((dPerm(m.member, "manageGuild") == false && !hasPerm(m.author, m.channel.guild, "modlogs"))  || isAdmin(m.author, m.channel.guild) == false){
-		bot.reply(m, "You are missing the `logs` permission. "); return;
+		bot.reply(m, "You are missing the `modlogs` permission. "); return;
 	}
 
 	var arg = str.split(" ")[0];
@@ -976,6 +842,7 @@ function executeModeration(m, users, breason, mtype, logformat, modlength)
 	var s = _s[m.channel.guild.id].settings;
 	var reg = new RegExp(/<@!?[0-9]{17,21}>/g);
 	var breason = breason.replace(reg, "");
+	var botmember = m.channel.guild.members.get(bot.user.id);
 	if(GuildRecentActions[m.channel.guild.id] == undefined){
 		GuildRecentActions[m.channel.guild.id] = {};
 	}
@@ -983,9 +850,7 @@ function executeModeration(m, users, breason, mtype, logformat, modlength)
 	{
 		var user = m.mentions[i];
 		var member = bot.guilds.get(sid).members.get(user.id);
-		var dpermban = dPerm(member, "manageGuild");
-		var gpermban = hasPerm(user, m.channel.guild, "moderator");
-		if(!dpermban && !gpermban){ //&& user.bot === false
+		if(libperm.isHigherRole(m.channel.guild, m.member, member)){
 			var modlog = {
 				user: user.id, 
 				staff: m.author.id, 
@@ -998,13 +863,43 @@ function executeModeration(m, users, breason, mtype, logformat, modlength)
 			mlogs.push(modlog);
 			usersmoderated.push("**"+user.username+"#"+user.discriminator+"**");
 			if(mtype === 1){
+				if(libperm.discordPerm(botmember, "banMembers") == false){
+					bot.reply(m, "Unable to ban because the Bot is missing the `Ban Members` permission on discord.");
+					return;
+				}
+				if(libperm.getHighestRolePos(botmember) < libperm.getHighestRolePos(member)){
+					bot.reply(m, "Unable to ban because the user has a higher role than the bot.");
+					return;
+				}
 				bot.banGuildMember(m.channel.guild.id, user.id, 7);
 			} else if(mtype == 2){
-				bot.deleteGuildMember(m.channel.guild.id, user.id)
+				if(libperm.discordPerm(botmember, "kickMembers") == false){
+					bot.reply(m, "Unable to kick because the Bot is missing the `Kick Members` permission on discord.");
+					return;
+				}
+				if(libperm.getHighestRolePos(botmember) < libperm.getHighestRolePos(member)){
+					bot.reply(m, "Unable to kick because the user has a higher role than the bot.");
+					return;
+				}
+				bot.kickGuildMember(m.channel.guild.id, user.id)
 			} else if(mtype == 3){
 				// Warning
 			} else if(mtype == 4){
 				// Mute user
+				if(libperm.discordPerm(botmember, "manageRoles") == false){
+					bot.reply(m, "Unable to mute because the Bot is missing the `Manage Roles` permission on discord.");
+					return;
+				}
+				var role = m.channel.guild.roles.get(s.muted);
+				if(role == undefined){
+					bot.reply(m, "Unable to mute because the mute role appears to be missing.");
+					return;
+				}
+				var rolepos = role.position;
+				if(libperm.discordPerm(botmember, "manageRoles") == false || libperm.canAssignRole(botmember, role) == false){
+					bot.reply(m, "Unable to unmute because the Bot requires a role with `Manage Roles` permission and needs to be positioned above the muted role.");
+					return;
+				}
 				var newroles = member.roles;
 				newroles.push(s.muted);
 				bot.editGuildMember(sid, user.id, {
@@ -1018,6 +913,15 @@ function executeModeration(m, users, breason, mtype, logformat, modlength)
 				}
 			} else if(mtype == 5){
 				// unmuted user
+				var role = m.channel.guild.roles.get(s.muted);
+				if(role == undefined){
+					bot.reply(m, "Unable to unmute because the mute role appears to be missing.");
+					return;
+				}
+				if(libperm.discordPerm(botmember, "manageRoles") == false || libperm.canAssignRole(botmember, role) == false){
+					bot.reply(m, "Unable to unmute because the Bot requires a role with `Manage Roles` permission and needs to be positioned above the muted role.");
+					return;
+				}
 				var newroles = [];
 				for(var i in member.roles){
 					if(member.roles[i] != s.muted){
@@ -1028,10 +932,10 @@ function executeModeration(m, users, breason, mtype, logformat, modlength)
 					roles: newroles
 				});
 			}
+		} else {
+			bot.reply(m, "Unable to moderate "+user.username+"#"+user.discriminator+" because they have a role higher than the bot.");
+			return;
 		}
-	}
-	if(mlogs.length === 0){
-		bot.reply(m, "No users are able to be moderated due to permissions!"); return;
 	}
 	sql.addModerationLogs(mlogs, (success, result)=>{
 		if(success){
@@ -2113,4 +2017,88 @@ function removeRole(m, str)
 
 }
 
+
+function UserActivity(m, str)
+{
+	var t = time_now() - (60*60*24*30);
+	var args = str.split(" ");
+	var user = null;
+	var channels = null;
+	if(m.channel.guild == undefined || args == undefined || args[0] == ""){
+		var user = m.author;
+	} else {
+		user = libbot.ResolveUser(args[0]);
+		if(args[1] == "globally"){
+			channels = null;
+		} else {
+			channels = m.channel.guild.channels.map(g=>g.id);
+		}
+		
+	}
+
+	if(user == false || user == undefined){
+		bot.reply(m, "Unable to find user.");
+	} else {
+		if(channels == null){
+			sqlcon.query("select count(*) as `messages` from `chat_logs` where `user_id`=? and `timestamp` > ?;", [user.id, t], 
+				function(err,result){
+					if(err){
+						bot.reply(m, "Internal SQL error. "+err.code);
+						return;
+					}
+					if(result.length == 0){
+						bot.reply(m, "No results for that user.");
+					} else {
+						bot.reply(m, user.username+"#"+user.discriminator+" has sent "+result[0]["messages"]+" messages in the last 30 days.");
+					}
+				}
+			);
+		} else {
+			sqlcon.query("select count(*) as `messages` from `chat_logs` where `user_id`=? and `timestamp` > ? and `channel_id` in (?);", [user.id, t, channels], 
+				function(err,result){
+					if(err){
+						bot.reply(m, "Internal SQL error. "+err.code);
+						return;
+					}
+					if(result.length == 0){
+						bot.reply(m, "No results for that user.");
+					} else {
+						bot.reply(m, user.username+"#"+user.discriminator+" has sent "
+								+result[0]["messages"]+" messages in the last 30 days in this server.");
+					}
+				}
+			);
+		}
+	}
+}
+
+var processingActive = {};
+
+// Gets a list of the most active users.
+function MostActive(m, str)
+{
+	var t = time_now() - (60*60*24*30);
+	var guild = m.channel.guild;
+	if(processingActive[guild.id]){
+		bot.reply(m, "Sorry, you can't run this command again, please wait for the last request to finish.");
+		return;
+	}
+	var users = guild.members.map(g=>g.id);
+	processingActive[guild.id] = true;
+}
+
+// Gets a list of the most active users.
+function LeastActive(m, str)
+{
+	var t = time_now() - (60*60*24*30);
+	var guild = m.channel.guild;
+	if(processingActive[guild.id]){
+		bot.reply(m, "Sorry, you can't run this command again, please wait for the last request to finish.");
+		return;
+	}
+	processingActive[guild.id] = true;
+	var users = guild.members.map(g=>g.id);
+	// select `user_id`,count(*) as amount from `chat_logs` where `timestamp` > 1473879123 group by `user_id` order by `amount` desc
+	sqlcon.query("select count(*) from `chat_logs` where `timestamp` > ? group by `user_id`;");
+}
 

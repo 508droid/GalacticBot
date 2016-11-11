@@ -55,8 +55,9 @@ exports.getColonyProfit = function(c)
 		var r = Math.random() * (1 - 0.2) + 0.2;
 		var m = 0.06;
 		var p = Math.floor(_u.colonies[c].population / 25000 +1)*1.15;
-		var rev = _u.colonies[c].population * .06;
-		return [Math.floor(rev*.2*p), Math.floor(rev*p), Math.floor(rev*r)];
+		var rev = _u.colonies[c].population * .01;
+		var rand = Math.floor(rev*p)*r;
+		return [Math.floor(rev*.2*p), Math.floor(rev*p), rand];
 	}
 }
 

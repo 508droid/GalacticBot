@@ -39,6 +39,13 @@ Enum.Actions =  {
 	deletereply: 7
 }
 
+Enum.ErrorReporting = {
+	default: 0,
+	owner: 1,
+	channel: 2,
+	none: 3
+}
+
 // Function callback, Time To Call Back, Object data
 global.QueueAction = (callback, ttcb, data)=>{
 	ActionQueue.push({
@@ -177,6 +184,10 @@ global.userFormatted = function(uid)
 	}
 	return "Missing";
 }
+
+global.libperm = require("../library/permissions.js");
+global.libbot = require("../library/bot.js");
+global.libserver = require("../library/server.js");
 
 process.on('uncaughtException', function (err) {
 	if(sql == null){
