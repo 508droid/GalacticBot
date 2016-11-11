@@ -3,7 +3,9 @@
   "description": "This is the official github for GalacticBot",
   "version": "0.1.0",
   "main": "beta.js",
-  "dependencies": {},
+  "dependencies": {
+
+  },
   "devDependencies": {},
   "scripts": {
     "test": "node beta"
@@ -17,7 +19,7 @@
     "bot"
   ],
   "author": "Semaphorism",
-  "license": "UNLICENSED",
+  "license": "Noncommercial",
   "bugs": {
     "url": "https://github.com/GalacticArc/GalacticBot/issues"
   },
