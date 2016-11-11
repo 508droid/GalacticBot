@@ -1,0 +1,154 @@
+//META{"name":"Space_Engineers","description":"A space engineers theme","author":"Semaphorism","version":"1.0.0"}*//{}
+
+.app,
+.callout-backdrop {
+	background:url(https://i.imgur.com/EgSSsAD.png) !important;
+	background-size:cover !important;
+}
+
+.links,
+.chat,
+.typing,
+.content,
+.guild-channels,
+.private-channels,
+.guild-header header,
+.divider-red span,
+.messages-wrapper,
+#voice-connection {
+	background: transparent !important;
+}
+
+.guilds-wrapper, .create-guild-container, .channels-wrap, .content .flex-spacer, .channel-members { 
+	background:rgba(47,77,99,0.6) !important;
+	border: 0px solid rgba(47,77,99,0);
+	padding: 0px;
+	-webkit-transition: background .3s linear;
+	-moz-transition: background .3s linear;
+	-ms-transition: background .3s linear;
+	-o-transition: background .3s linear;
+	transition: background .3s linear;
+}
+
+.channel-members {
+	background:rgba(47,77,99,0.6) !important;
+	-webkit-transition: background .3s linear;
+	-moz-transition: background .3s linear;
+	-ms-transition: background .3s linear;
+	-o-transition: background .3s linear;
+	transition: background .3s linear;
+}
+
+.channel-members:hover {
+	background:rgba(68,109,137,0.6) !important;
+}
+
+.guilds-wrapper:hover, .channels-wrap:hover {
+	background:rgba(68,109,137,0.6) !important;
+}
+
+.channel:hover {
+	background:rgba(68,109,137,1) !important;
+	color: #FFF !important;
+}
+
+.scroller-wrap .scroller::-webkit-scrollbar-thumb {
+	border:3px solid rgba(255,255,255,0) !important;
+	background-color:#1D6586 !important;
+}
+
+.scroller-wrap .scroller::-webkit-scrollbar-track-piece {
+	border:3px solid rgba(255,255,255,0) !important;
+	background-color:rgba(0,0,0,0.3) !important;
+}
+
+.guild-header header {
+	box-shadow:none !important;
+	background: rgba(48,88,113,1) !important;
+	color:#FFF;
+}
+
+.guild-channels ul .channel-text a {
+	padding:8px 6px 10px 18px;
+	background: rgba(48,88,113,1) !important;
+}
+
+.account {
+	z-index:9;
+	border-top: 0px solid #7E96A8 !important;
+	padding:0 5px !important;
+	background:rgba(47,77,99,0.8) !important;
+	height:77px;
+	box-sizing:border-box;
+}
+
+.account .status {
+    border:1px solid #000;
+}
+
+.account .btn {
+	background: #2F4D63;
+	box-shadow:none !important;
+}
+
+.account .btn:active {
+	background:#000;
+}
+
+.account .btn-settings:after {
+	opacity:0.5;
+}
+
+.account .btn-deafen,
+.account .btn-mute {
+    border-right:none;
+}
+
+.channel-members .avatar-small .status {
+    border-color:rgba(0,0,0,0.7) !important;
+}
+
+.channel-members h2 {
+	background: #2F4D63;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    color: #FFF !important;
+}
+
+.channel-members .member+h2 {
+	margin-top:5px;
+}
+
+.channel-members .member {
+	border: 1px solid rgba(0,0,0,0);
+}
+
+.channel-members .member:hover {
+    border: 1px solid #7E96A8;
+	background:rgba(255,255,255,0.07) !important;
+}
+
+
+
+.guild-channels header h2 {
+	padding:0 18px;
+    
+}
+
+
+.title-wrap {
+	border-bottom:1px solid rgba(0,0,0,0.3) !important;
+	background: #2F4D63 !important;
+}
+
+.search-bar {
+    background:rgba(47,77,99,0.6);
+}
+
+.search-bar-inner > input {
+ 	color: #FFF !important;   
+}
+
+.scroller .selected {
+    background:rgba(47,90,110,.9) !important;
+}
