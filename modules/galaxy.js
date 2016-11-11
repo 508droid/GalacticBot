@@ -16,8 +16,6 @@ exports.module.preinit = function(){
 
 exports.module.init = function(){
 	discord.hookprefix(galaxydiscord, "$");
-	discord.hookprefix(galaxydiscord, "🖕");
-	discord.hookprefix(galaxydiscord, "Hitler did **nothing** wrong. ");
 	discord.hookcommand(galaxydiscord, "help", helpgalaxy);
 	discord.hookcommand(galaxydiscord, "about", aboutgalaxy);
 	discord.hookcommand(galaxydiscord, "galaxy", galaxy);
