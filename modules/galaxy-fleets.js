@@ -6,28 +6,22 @@ exports.module = {
 };
 
 var fs = require("fs");
-var dsettings = require("../data/discord.json").settings;
-var exec = require('child_process').exec;
-var time_now = function(){ Math.floor(Date.now() / 1000); }
-var bot;
-var msg = {};
-var sql = null;
 var _g = null;
 var _u = null;
-var _s = null;
+var shiplimit = 500;
+var glib = null;
+
 exports.module.preinit = function(){
 
 };
 
 exports.module.init = function(){
-	global.modules["discordbot"].hookcommand(global.galaxydiscord, "fleetkick", fleetkick, {version: 2});
-	global.modules["discordbot"].hookcommand(global.galaxydiscord, "fundfleet", fundfleet, {version: 2});
+	modules["discordbot"].hookcommand(galaxydiscord, "fleetkick", fleetkick, {version: 2});
+	modules["discordbot"].hookcommand(galaxydiscord, "fundfleet", fundfleet, {version: 2});
 
-	bot = global.modules["discordbot"].bots["bot"];
-	_s = global.modules["galaxylib"];
-	msg = _s.msg;
-	_g = _s._g;
-	_u = _s._u;
+	glib = modules.galaxylib;
+	_g = glib._g;
+	_u = glib._u;
 };
 
 function fleetkick(m)
