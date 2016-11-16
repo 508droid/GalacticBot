@@ -742,7 +742,7 @@ function exportSettings(m, str)
 
 function userModeration(m, str)
 {
-	if((dPerm(m.member, "manageGuild") == false && !hasPerm(m.author, m.channel.guild, "modlogs"))  || isAdmin(m.author, m.channel.guild) == false){
+	if(dPerm(m.member, "manageGuild") == false && !hasPerm(m.author, m.channel.guild, "modlogs") && isAdmin(m.author, m.channel.guild) == false){
 		bot.reply(m, "You are missing the `modlogs` permission. "); return;
 	}
 
