@@ -796,7 +796,7 @@ function userModeration(m, str)
 /* get formatted user */
 function getFU(uid)
 {
-	var userm = bot.users.get(g.id);
+	var userm = bot.users.get(uid);
 	if(userm == null){
 		if(usercache[uid] !== undefined){
 			return "**"+usercache[uid]+"**";
