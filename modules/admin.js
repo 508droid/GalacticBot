@@ -247,12 +247,17 @@ function EventMemberBanned(guild, user)
 				var id = result[0];
 				var modcase = mlogs[0];
 				var logformat = libtext.logs.ban;
-				var modstr = logformat.replace(/\{staff\}/g, getFU(user.id))
-					.replace(/\{user\}/g, getFU(modcase.user))
-					.replace(/\{reason\}/g, mreason)
-					.replace(/\{caseid\}/g, id);
+				var ModerationLog = libserver.CaseLog({
+					staff: bot.user.id,
+					user: mlogs[i].user,
+					type: mtype,
+					reason: "Unknown reason, automatically logged",
+					format: logformat,
+					id: id,
+					length: ""
+				});
 
-				serverlog(guild, modstr, id);
+				serverlog(guild, ModerationLog, id);
 				
 			} else {
 				console.log("Error with moderation logs.");
@@ -994,6 +999,7 @@ function banUser(m, str)
 	executeModeration(m, m.mentions, str, 1, libtext.logs.ban);
 }
 
+/* Kick */
 function kickUser(m, str)
 {
 	if(dPerm(m.member, "kickMembers") == false && hasPerm(m.author, m.channel.guild, "kick") == false && isAdmin(m.author, m.channel.guild) == false){
