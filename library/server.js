@@ -10,7 +10,8 @@ exports.ModTypeColors = {
 	"4": 0x0094FF,
 	"5": 0x267F00,
 	"10": 0x7F0000
-}
+};
+
 exports.BotModeration = {}; // Stores moderation actions recently.
 exports.AddPoint = (guild, member)=>{
 	if(BotModeration[guild.id] == undefined){
@@ -102,7 +103,7 @@ exports.getFormat = function(moderation)
 	}
 }
 
-// Gets a formatted user output like Username#1337
+// Gets a formatted user output like Username#1337 by using the User ID
 exports.formatUser = function(uid)
 {
 	var userm = bot.users.get(uid);
