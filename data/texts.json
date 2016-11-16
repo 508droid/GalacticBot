@@ -1,0 +1,43 @@
+{
+	"admin_only":"Sorry, that command is a bot developer only command.",
+	"help":"**General Commands**\nFor commands related to the bot, that the users would use.\n<http://galacticarc.ca/t/galacticbot-documentation/47/5>\n\n**Administration commands**\nFor commands related to administrating your server.\n<http://galacticarc.ca/t/galacticbot-documentation/47>\n\n**Galaxy**\nThe game the bot has\n<https://github.com/GalacticArc/GalacticBot/wiki/Galaxy-tutorial>\n\nView our bots changelog using -changelog\nJoin our server for discussion! https://discord.gg/eeBGFg4",
+	"helpdev":"Command list coming.",
+	"helpadmin":"Please view our administration help on the github. <https://github.com/GalacticArc/GalacticBot/wiki/GalacticBot-Administration>",
+	"admin_indexed":"Your server is now indexed on the server list. \n You can add tags using !tagserver <tag> \n E.g. !tagserver minecraft\n You can use up to 5 tags for your server. \n Try !recommendedtags to see some popular ones.",
+	"recommended_tags":"\n**Recommended Tags** \n *if you any of these tags match your community.* ``` minecraft, gaming, eve online, steam, roblox, unturned, rust, call of duty, battlefield, overwatch, halo, teamspeak ``` *The tags should be simple enough for people to search for them if you want them to be found properly.*",
+	"admin_failed_index":"There was an internal error while trying to index your server.",
+	"server_only":"Sorry, that command only works on servers.",
+	"internal_error":"There was an internal error.",
+	"status":"!help | !invite",
+	"search_query":"Usage: !search <query> \n + prefix means it requires that tag, - prefix means it must not have that tag. Without a tag. \nExamples: \n !search bot development - Searches for servers that have both tags. \n !search minecraft community",
+	"about_galaxy":"The Galaxy game is a in-development economic and fighting game. You have to colonize, build up resources, then use them to make your fleets. Protect your colonies from attacks and conquer the galaxy!",
+	"galaxy_help":"**Galaxy Tutorial**\n View our comprehensive tutorial on github for more explanations, etc. \n https://github.com/GalacticArc/GalacticBot/wiki/Galaxy-tutorial",
+	"galaxy_selection":"There are a few ways to select ships.\nComma format: UID,UID\n    E.g 1,2 - Selects ships Unique ID 1 and 2.\nFleet selection: fleet:UID\n    E.g fleet:41 - Selects fleet #41\nall - Simple, just say all. And all of your ships will try to apply the action. Not recommended for most things.\ntype:<type>\n    E.g type:fighter - Selects all ships of that type. ",
+	"invite":"\n**Add bot using this URL**\n  https://discordapp.com/oauth2/authorize?&client_id=168579257134612480&scope=bot \n \n\nJoin our official Discord for discussions about the bot! https://discord.gg/eeBGFg4",
+	"ping":[
+		"I am a leaf on the wind, watch how I sore. \n— Serenity", 
+		"Space is too small. \n— Wikipedia 8977", 
+		"To be or not to be, that is the question, \n— William Shakespeare",
+		"Astronomy compels the soul to look upward, and leads us from this world to another. \n— Plato The Republic, 342 BCE.",
+		"Never get too busy making a living that you forget to make a life.\n — Dolly Parton",
+		"To be glad of life, because it gives you the chance to love and to work and to play and to look up at the stars. \n— Henry Van Dyke, 1909.",
+		"The contemplation of celestial things will make a man both speak and think more sublimely and magnificently when he descends to human affairs. \n— Marcus Tullius Cicero, c. 30 BCE",
+		"The sky is the ultimate art gallery just above us.\n — Ralph Waldo Emerson",
+		"Equipped with his five senses, man explores the universe around him and calls the adventure Science. — Edwin Hubble, The Nature of Science, 1954",
+		"If a good person makes a bad decision, it doesn't mean they're bad, it means they're human\n- RJS 2016",
+		"I need more quotes, send me em! \n — Semaphorism, GalacticBot developer, 2016",
+		"Be humble for you are made of earth.\nBe noble for you are made of stars.\n— Serbian proverb",
+		"Nobody exists on purpose, nobody belongs anywhere, everybody's gonna die. Come watch TV. -Morty 2014",
+		"I kill therefore I am -Barry the Chopper",
+		"http://i.imgur.com/D7KqKQo.gif"
+
+	],
+	"logs":{
+		"ban":"**BANNED**\n**CASE**: #{caseid}\n**User**: {user}\n**User ID**: {userid}\n**Description**: {reason}",
+		"kick":"**KICKED**\n**CASE**: #{caseid}\n**User**: {user}\n**User ID**: {userid}\n**Description**: {reason}",
+		"warn":"**WARNED**\n**CASE**: #{caseid}\n**User**: {user}\n**User ID**: {userid}\n**Description**: {reason}",
+		"mute":"**MUTED**\n**CASE**: #{caseid}\n**User**: {user}\n**User ID**: {userid}\n**Length**: {length}\n**Description**: {reason}",
+		"unmute":"**UNMUTED**\n**CASE**: #{caseid}\n**User**: {user}\n**User ID**: {userid}\n**Description**: {reason}",
+		"unban":"**UNBANNED**\n**CASE**: #{caseid}\n**User**: {user}\n**User ID**: {userid}\n**Description**: {reason}"
+	}
+}

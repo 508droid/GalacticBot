@@ -397,7 +397,14 @@ function changeReason(m, str)
 				} else {
 					if(ModerationMessageCache[moderation.case_id] !== undefined){
 						moderation.reason = reason;
-						var newstr = getModerationString(moderation);
+						var newstr = libserver.CaseLog({
+							staff: moderation.staff_id,
+							user: moderation.user_id,
+							reason: breason,
+							format: libserver.getFormat(moderation.mod_type),
+							id: result[i],
+							type: moderation.mod_type
+						});
 						if(newstr == false){ return; }
 						bot.editMessage(logchannel, ModerationMessageCache[moderation.case_id], newstr);
 					}
@@ -671,7 +678,7 @@ function botMuteUser(m, mreason)
 	var mlogs = [modlog];
 	var newroles = member.roles;
 	newroles.push(_s[m.channel.guild.id].settings.muted);
-	QueueAction("unmute", 84600, {
+	QueueAction("unmute", 3600, {
 		user_id: user.id,
 		guild: m.channel.guild.id
 	});
@@ -681,7 +688,15 @@ function botMuteUser(m, mreason)
 
 	sql.addModerationLogs(mlogs, (success, result)=>{
 		if(success){
-			serverlog(m.channel.guild, "**"+bot.user.username+"#"+bot.user.discriminator+"** muted "+"**"+user.username+"#"+user.discriminator+"**"+" for `"+mreason+"` Case Id(s): "+result.join(", "));
+			var ModerationLog = libserver.CaseLog({
+				staff: bot.user.id,
+				user: user.id,
+				reason: mreason,
+				format: libserver.getFormat(4),
+				id: result[i],
+				length: "1h"
+			});
+			serverlog(m.channel.guild, ModerationLog, result[i]);
 		}
 	});
 }
@@ -776,7 +791,7 @@ function userModeration(m, str)
 /* get formatted user */
 function getFU(uid)
 {
-	var userm = bot.users.find(g=>g.id == uid);
+	var userm = bot.users.get(g.id);
 	if(userm == null){
 		if(usercache[uid] !== undefined){
 			return "**"+usercache[uid]+"**";
@@ -800,12 +815,14 @@ function muteUser(m, str)
 	var scc = (str.match(/\;/g) || []).length;
 	var reg = new RegExp(/<@!?[0-9]{17,21}>/g);
 	var reason = "";
-	var mutelength = false;
+	var mutelength = 3600;
+	var mutelengthstr = "1h";
 	if(scc === 0){
 		reason = str.replace(reg, "");
 	} else if(scc === 1){
 		reason = str.replace(reg, "").split(";")[1];
 		mutelength = Timestamp(str.replace(reg, "").split(";")[0]);
+		mutelengthstr = str.replace(reg, "").split(";")[0];
 	}
 
 	var s = _s[m.channel.guild.id].settings;
@@ -813,7 +830,7 @@ function muteUser(m, str)
 		bot.reply(m, "No mute role was set! use `-settings muted_role [role name]`");
 		return;
 	}
-	executeModeration(m, m.mentions, reason, 4, libtext.logs.mute, mutelength);
+	executeModeration(m, m.mentions, reason, 4, libtext.logs.mute, mutelength, mutelengthstr);
 }
 
 function unmuteUser(m, str)
@@ -834,7 +851,7 @@ function unmuteUser(m, str)
 	executeModeration(m, m.mentions, str, 5, libtext.logs.unmute);
 }
 
-function executeModeration(m, users, breason, mtype, logformat, modlength)
+function executeModeration(m, users, breason, mtype, logformat, modlength, modlengthstr)
 {
 	var sid = m.channel.guild.id;
 	var mlogs = [];
@@ -939,16 +956,25 @@ function executeModeration(m, users, breason, mtype, logformat, modlength)
 	}
 	sql.addModerationLogs(mlogs, (success, result)=>{
 		if(success){
-			bot.reply(m, ":hammer: "+modtypes[mtype]+" "+usersmoderated.join(" and ")+" for `"+breason+"`");
+			var hammerstr = ":hammer: "+modtypes[mtype]+" "+usersmoderated.join(" and ")+" for `"+breason+"`";
+			
+			if(modlengthstr != undefined){
+				hammerstr += ", length: "+modlengthstr;
+			}
+			bot.reply(m, hammerstr);
 			for(var i in result)
 			{
-				var modcase = mlogs[i];
-				var modstr = logformat.replace(/\{staff\}/g, getFU(m.author.id))
-					.replace(/\{user\}/g, getFU(modcase.user))
-					.replace(/\{reason\}/g, breason)
-					.replace(/\{caseid\}/g, result[i]);
+				var ModerationLog = libserver.CaseLog({
+					staff: m.author.id,
+					user: mlogs[i].user,
+					type: mtype,
+					reason: breason,
+					format: logformat,
+					id: result[i],
+					length: modlengthstr
+				});
 
-				serverlog(m.channel.guild, modstr, result[i]);
+				serverlog(m.channel.guild, ModerationLog, result[i]);
 			}
 		} else {
 			bot.reply(m, "Internal error attempting to log the moderation! ");

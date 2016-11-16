@@ -3,6 +3,14 @@
 		Adds handy functions to manage servers.
 */
 
+exports.ModTypeColors = {
+	"1": 0x7F0000,
+	"2": 0xCE6118,
+	"3": 0xCCAA00,
+	"4": 0x0094FF,
+	"5": 0x267F00,
+	"10": 0x7F0000
+}
 exports.BotModeration = {}; // Stores moderation actions recently.
 exports.AddPoint = (guild, member)=>{
 	if(BotModeration[guild.id] == undefined){
@@ -73,6 +81,85 @@ exports.modlog = (server, str, caseId)=>
 			});
 		}
 		
+	}
+}
+
+// Returns the format string for whatever type of moderation number.
+exports.getFormat = function(moderation)
+{
+	if(moderation.mod_type == 1){
+		return libtext.logs.ban;
+	} else if(moderation.mod_type == 2){
+		return libtext.logs.kick;
+	} else if(moderation.mod_type == 3){
+		return libtext.logs.warn;
+	} else if(moderation.mod_type == 4){
+		return libtext.logs.mute;
+	} else if(moderation.mod_type == 10){
+		return libtext.logs.unban;
+	} else {
+		return "Unable to find format for "+moderation;
+	}
+}
+
+// Gets a formatted user output like Username#1337
+exports.formatUser = function(uid)
+{
+	var userm = bot.users.get(uid);
+	if(userm == null){
+		if(usercache[uid] !== undefined){
+			return "**"+usercache[uid]+"**";
+		}
+		return "Missing user";
+	} else {
+		return ""+userm.username.replace(/`/g, "\`") +"#"+userm.discriminator+"";
+	}
+	return "Missing";
+}
+
+// Creates a formatted mod case using Embeds.
+/*
+	moddata {
+		staff <user ID>
+		user <user ID>
+		reason <String>
+		id <case ID>
+		type <moderation type>
+		format <log format>
+	}
+*/
+exports.CaseLog = function(moddata)
+{
+	var staff = libbot.ResolveUser(moddata.staff);
+	var user = libbot.ResolveUser(moddata.user);
+	
+	var formatted = moddata.format.replace(/\{staff\}/g, exports.formatUser(moddata.staff))
+		.replace(/\{user\}/g, exports.formatUser(moddata.user))
+		.replace(/\{reason\}/g, moddata.reason)
+		.replace(/\{caseid\}/g, moddata.id)
+		.replace(/\{userid\}/g, moddata.user)
+		.replace(/\{length\}/g, moddata.length);
+	
+	var embed = {
+		color: exports.ModTypeColors[moddata.type.toString()],
+		author: {
+			name: user.username+"#"+user.discriminator,
+			icon_url: user.avatarURL
+		},
+		title: '',
+		url: '',
+		description: formatted,
+		fields: [],
+		timestamp: new Date(),
+		footer: {
+		icon_url: staff.avatarURL,
+		text: staff.username+"#"+staff.discriminator +" (STAFF)"
+		}
+	};
+	
+	return {
+		content: "",
+		embed: embed
 	}
 }
 
